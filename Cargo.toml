@@ -10,7 +10,7 @@ homepage = "https://github.com/tyrchen/tokio-tls-helper"
 description = """
 Utility tool to make TLS easy to use. Most of the code is extracted from tonic.
 """
-readme = "../README.md"
+readme = "README.md"
 categories = ["development-tools"]
 keywords = ["tokio", "tls"]
 
