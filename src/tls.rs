@@ -1,4 +1,3 @@
-use rustls_native_certs;
 use std::{fmt, sync::Arc};
 use tokio::io::{AsyncRead, AsyncWrite};
 use tokio_rustls::server::TlsStream;
