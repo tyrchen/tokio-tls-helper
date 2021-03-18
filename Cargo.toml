@@ -1,0 +1,34 @@
+[package]
+name = "tokio-tls-helper"
+version = "0.1.0"
+authors = ["Tyr Chen <tyr.chen@gmail.com>"]
+edition = "2018"
+license = "MIT"
+documentation = "https://docs.rs/tokio-tls-helper"
+repository = "https://github.com/tyrchen/tokio-tls-helper"
+homepage = "https://github.com/tyrchen/tokio-tls-helper"
+description = """
+Utility tool to make TLS easy to use. Most of the code is extracted from tonic.
+"""
+readme = "../README.md"
+categories = ["development-tools"]
+keywords = ["tokio", "tls"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+http = "0.2"
+hyper = { version = "0.14", features = ["full"] }
+rustls-native-certs = { version = "0.5" }
+serde = { version = "1", features = ["derive"] }
+serde_with = "1"
+thiserror = "1"
+tokio = { version = "1", features = ["net", "macros", "io-util"] }
+tokio-rustls = { version = "0.22" }
+webpki = "0.21"
+
+[dev-dependencies]
+lazy_static = "1"
+toml = "0.5"
+tracing = "0.1"
+tracing-subscriber = "0.2"
