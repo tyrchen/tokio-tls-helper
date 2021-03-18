@@ -37,7 +37,7 @@ impl TlsConnector {
         {
             config.root_store = match rustls_native_certs::load_native_certs() {
                 Ok(store) | Err((Some(store), _)) => store,
-                Err((None, error)) => Err(error)?,
+                Err((None, error)) => return Err(error.into()),
             };
         }
 

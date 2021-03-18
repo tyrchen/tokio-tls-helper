@@ -147,7 +147,7 @@ mod tests {
             let mut buf = [0; 12];
             reader.read_exact(&mut buf).await.unwrap();
             info!("server: got data: {:?}", buf);
-            writer.write_all(&mut buf).await.unwrap();
+            writer.write_all(&buf).await.unwrap();
             info!("server: flush the data out");
         });
     }
