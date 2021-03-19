@@ -2,12 +2,11 @@ mod client_config;
 mod connected;
 mod error;
 mod identity;
-mod io;
+// mod io;
 mod server_config;
 mod tls;
 
-use std::{pin::Pin, sync::Arc};
-use tokio::io::{AsyncRead, AsyncWrite};
+use std::sync::Arc;
 use tokio_rustls::rustls::ClientConfig;
 
 pub use client_config::ClientTlsConfig;
@@ -16,7 +15,8 @@ pub use identity::{Certificate, Identity};
 pub use server_config::ServerTlsConfig;
 
 // re-exports
-pub use tokio_rustls::TlsStream;
+pub use tokio_rustls::client::TlsStream as TlsClientStream;
+pub use tokio_rustls::server::TlsStream as TlsServerStream;
 
 pub(crate) use connected::Connected;
 
@@ -29,11 +29,6 @@ pub struct TlsConnector {
 pub struct TlsAcceptor {
     pub inner: Arc<tokio_rustls::rustls::ServerConfig>,
 }
-
-pub trait Io: AsyncRead + AsyncWrite + Send + 'static {}
-pub struct BoxedIo(Pin<Box<dyn Io>>);
-pub trait ConnectedIo: Io + Connected {}
-pub struct ServerIo(Pin<Box<dyn ConnectedIo>>);
 
 #[cfg(test)]
 mod tests {

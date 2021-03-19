@@ -1,17 +1,19 @@
 use std::{fmt, sync::Arc};
 use tokio::io::{AsyncRead, AsyncWrite};
-use tokio_rustls::server::TlsStream;
 
 use tokio_rustls::{
-    rustls::{ClientConfig, NoClientAuth, ServerConfig, Session},
+    rustls::{ClientConfig, NoClientAuth, ServerConfig},
     webpki::DNSNameRef,
     TlsAcceptor as RustlsAcceptor, TlsConnector as RustlsConnector,
 };
 
-use crate::{BoxedIo, Certificate, Connected, Error, Identity, TlsAcceptor, TlsConnector};
+use crate::{
+    Certificate, Connected, Error, Identity, TlsAcceptor, TlsClientStream, TlsConnector,
+    TlsServerStream,
+};
 
 /// h2 alpn in plain format for rustls.
-const ALPN_H2: &str = "h2";
+// const ALPN_H2: &str = "h2";
 
 #[derive(Debug, Clone)]
 pub(crate) struct Cert {
@@ -27,7 +29,7 @@ impl TlsConnector {
         domain: String,
     ) -> Result<Self, Error> {
         let mut config = ClientConfig::new();
-        config.set_protocols(&[Vec::from(&ALPN_H2[..])]);
+        // config.set_protocols(&[Vec::from(&ALPN_H2[..])]);
 
         if let Some(identity) = identity {
             let (client_cert, client_key) = rustls_keys::load_identity(identity)?;
@@ -52,28 +54,17 @@ impl TlsConnector {
         })
     }
 
-    pub async fn connect<I>(&self, io: I) -> Result<BoxedIo, Error>
+    pub async fn connect<I>(&self, io: I) -> Result<TlsClientStream<I>, Error>
     where
         I: AsyncRead + AsyncWrite + Send + Unpin + 'static,
     {
-        let tls_io = {
-            let dns = DNSNameRef::try_from_ascii_str(self.domain.as_str())?.to_owned();
+        let dns = DNSNameRef::try_from_ascii_str(self.domain.as_str())?.to_owned();
 
-            let io = RustlsConnector::from(self.config.clone())
-                .connect(dns.as_ref(), io)
-                .await?;
+        let io = RustlsConnector::from(self.config.clone())
+            .connect(dns.as_ref(), io)
+            .await?;
 
-            let (_, session) = io.get_ref();
-
-            match session.get_alpn_protocol() {
-                Some(b) if b == b"h2" => (),
-                _ => return Err(Error::H2NotNegotiated),
-            };
-
-            BoxedIo::new(io)
-        };
-
-        Ok(tls_io)
+        Ok(io)
     }
 }
 
@@ -106,14 +97,14 @@ impl TlsAcceptor {
             }
         };
         config.set_single_cert(cert, key)?;
-        config.set_protocols(&[Vec::from(&ALPN_H2[..])]);
+        // config.set_protocols(&[Vec::from(&ALPN_H2[..])]);
 
         Ok(Self {
             inner: Arc::new(config),
         })
     }
 
-    pub async fn accept<IO>(&self, io: IO) -> Result<TlsStream<IO>, Error>
+    pub async fn accept<IO>(&self, io: IO) -> Result<TlsServerStream<IO>, Error>
     where
         IO: AsyncRead + AsyncWrite + Connected + Unpin + Send + 'static,
     {
