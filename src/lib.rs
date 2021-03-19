@@ -15,16 +15,19 @@ pub use error::Error;
 pub use identity::{Certificate, Identity};
 pub use server_config::ServerTlsConfig;
 
+// re-exports
+pub use tokio_rustls::TlsStream;
+
 pub(crate) use connected::Connected;
 
 #[derive(Clone)]
 pub struct TlsConnector {
-    config: Arc<ClientConfig>,
-    domain: Arc<String>,
+    pub config: Arc<ClientConfig>,
+    pub domain: Arc<String>,
 }
 #[derive(Clone)]
 pub struct TlsAcceptor {
-    inner: Arc<tokio_rustls::rustls::ServerConfig>,
+    pub inner: Arc<tokio_rustls::rustls::ServerConfig>,
 }
 
 pub trait Io: AsyncRead + AsyncWrite + Send + 'static {}
