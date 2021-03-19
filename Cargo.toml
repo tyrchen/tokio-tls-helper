@@ -28,7 +28,6 @@ tokio-rustls = { version = "0.22" }
 webpki = "0.21"
 
 [dev-dependencies]
-lazy_static = "1"
 toml = "0.5"
 tracing = "0.1"
-tracing-subscriber = "0.2"
+test-helper = "0.1"

@@ -33,8 +33,7 @@ pub struct TlsAcceptor {
 #[cfg(test)]
 mod tests {
     use http::Uri;
-    use lazy_static::lazy_static;
-    use std::sync::Once;
+    use test_helper::start_logger;
     use tokio::{
         io::{split, AsyncReadExt, AsyncWriteExt},
         net::{TcpListener, TcpStream},
@@ -42,10 +41,6 @@ mod tests {
     use tracing::{error, info};
 
     use super::*;
-
-    lazy_static! {
-        static ref INIT: Once = Once::new();
-    }
 
     #[tokio::test]
     async fn tls_server_build_config_should_work() {
@@ -166,12 +161,5 @@ mod tests {
         reader.read_exact(buf).await.unwrap();
 
         info!("client: read echoed data");
-    }
-
-    fn start_logger() {
-        INIT.call_once(|| {
-            // install global collector configured based on RUST_LOG env var.
-            tracing_subscriber::fmt::init();
-        });
     }
 }
