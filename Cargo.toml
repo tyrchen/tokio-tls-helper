@@ -1,6 +1,6 @@
 [package]
 name = "tokio-tls-helper"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Tyr Chen <tyr.chen@gmail.com>"]
 edition = "2018"
 license = "MIT"
@@ -16,16 +16,22 @@ keywords = ["tokio", "tls"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+tls-roots = ["rustls-native-certs"]
+
 [dependencies]
 http = "0.2"
 hyper = { version = "0.14", features = ["full"] }
-rustls-native-certs = { version = "0.5" }
+rustls-native-certs = { version = "0.5", optional = true}
 serde = { version = "1", features = ["derive"] }
 serde_with = "1"
 thiserror = "1"
 tokio = { version = "1", features = ["net", "macros", "io-util"] }
 tokio-rustls = { version = "0.22" }
+tracing = "0.1"
+tracing-futures = "0.2"
 webpki = "0.21"
+
 
 [dev-dependencies]
 toml = "0.5"

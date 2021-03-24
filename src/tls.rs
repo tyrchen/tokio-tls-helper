@@ -1,5 +1,6 @@
 use std::{fmt, sync::Arc};
 use tokio::io::{AsyncRead, AsyncWrite};
+use tracing::{instrument, Instrument};
 
 use tokio_rustls::{
     rustls::{ClientConfig, NoClientAuth, ServerConfig},
@@ -13,7 +14,7 @@ use crate::{
 };
 
 /// h2 alpn in plain format for rustls.
-// const ALPN_H2: &str = "h2";
+const ALPN_H2: &str = "h2";
 
 #[derive(Debug, Clone)]
 pub(crate) struct Cert {
@@ -23,19 +24,21 @@ pub(crate) struct Cert {
 }
 
 impl TlsConnector {
+    #[instrument]
     pub(crate) fn new_with_rustls_cert(
         ca_cert: Option<Certificate>,
         identity: Option<Identity>,
         domain: String,
     ) -> Result<Self, Error> {
         let mut config = ClientConfig::new();
-        // config.set_protocols(&[Vec::from(&ALPN_H2[..])]);
+        config.set_protocols(&[Vec::from(&ALPN_H2[..])]);
 
         if let Some(identity) = identity {
             let (client_cert, client_key) = rustls_keys::load_identity(identity)?;
             config.set_single_client_cert(client_cert, client_key)?;
         }
 
+        #[cfg(feature = "tls-roots")]
         {
             config.root_store = match rustls_native_certs::load_native_certs() {
                 Ok(store) | Err((Some(store), _)) => store,
@@ -62,6 +65,7 @@ impl TlsConnector {
 
         let io = RustlsConnector::from(self.config.clone())
             .connect(dns.as_ref(), io)
+            .instrument(tracing::info_span!("tls_connector"))
             .await?;
 
         Ok(io)
@@ -75,6 +79,7 @@ impl fmt::Debug for TlsConnector {
 }
 
 impl TlsAcceptor {
+    #[instrument]
     pub(crate) fn new_with_rustls_identity(
         identity: Identity,
         client_ca_root: Option<Certificate>,
@@ -97,7 +102,7 @@ impl TlsAcceptor {
             }
         };
         config.set_single_cert(cert, key)?;
-        // config.set_protocols(&[Vec::from(&ALPN_H2[..])]);
+        config.set_protocols(&[Vec::from(&ALPN_H2[..])]);
 
         Ok(Self {
             inner: Arc::new(config),
@@ -109,7 +114,11 @@ impl TlsAcceptor {
         IO: AsyncRead + AsyncWrite + Connected + Unpin + Send + 'static,
     {
         let acceptor = RustlsAcceptor::from(self.inner.clone());
-        acceptor.accept(io).await.map_err(Into::into)
+        acceptor
+            .accept(io)
+            .instrument(tracing::info_span!("tls_acceptor"))
+            .await
+            .map_err(Into::into)
     }
 }
 
@@ -121,9 +130,11 @@ impl fmt::Debug for TlsAcceptor {
 
 mod rustls_keys {
     use tokio_rustls::rustls::{internal::pemfile, Certificate, PrivateKey};
+    use tracing::instrument;
 
     use crate::{Error, Identity};
 
+    #[instrument]
     fn load_rustls_private_key(mut cursor: std::io::Cursor<&[u8]>) -> Result<PrivateKey, Error> {
         // First attempt to load the private key assuming it is PKCS8-encoded
         if let Ok(mut keys) = pemfile::pkcs8_private_keys(&mut cursor) {
@@ -144,6 +155,7 @@ mod rustls_keys {
         Err(Error::PrivateKeyParseError)
     }
 
+    #[instrument]
     pub(crate) fn load_identity(
         identity: Identity,
     ) -> Result<(Vec<Certificate>, PrivateKey), Error> {
